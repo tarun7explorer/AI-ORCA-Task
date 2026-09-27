@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orca-ai-layer"
+version = "0.1.0"
+description = "ORCA AI triage layer: LLM integration, guardrails, and evaluation harness"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Proprietary" }
+authors = [
+    { name = "ORCA AI Layer Contributors" }
+]
+dependencies = [
+    "pydantic>=2.4.0,<3.0.0",
+    "PyYAML>=6.0.1,<7.0.0",
+    "rich>=13.7.0,<14.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0,<9.0.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

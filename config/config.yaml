@@ -1,0 +1,19 @@
+primary:
+  name: orca-primary
+  failure_rate: 0.15
+  malformed_rate: 0.05
+  input_rate_per_1m: 3.00
+  output_rate_per_1m: 15.00
+  seed: 42
+
+fallback:
+  name: orca-fallback
+  failure_rate: 0.02
+  malformed_rate: 0.25
+  input_rate_per_1m: 0.50
+  output_rate_per_1m: 1.50
+  seed: 4242
+
+max_retries: 3
+backoff_base_seconds: 0.05
+max_schema_retries: 1

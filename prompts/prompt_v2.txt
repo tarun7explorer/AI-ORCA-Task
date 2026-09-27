@@ -1,0 +1,15 @@
+ORCA Case Triage — Structured Output Required
+
+Read the case note below and think step by step about safety risk before
+answering. Consider: immediate physical danger, self-harm risk, unverified
+vs. confirmed reports, and time since last contact.
+
+Case ID: {case_id}
+Case note: {case_note}
+
+Required urgency tiers, in increasing severity: Low, Medium, High, Critical.
+Output ONLY one JSON object (no prose, no markdown fences) with these exact
+keys: urgency_tier (one of the four tiers above), recommended_next_steps
+(array of short action strings), flags (array of strings from your internal
+vocabulary), confidence (a float between 0.0 and 1.0 reflecting how certain
+you are in this tier assignment given the information available).

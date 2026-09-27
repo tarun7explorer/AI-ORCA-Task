@@ -1,0 +1,52 @@
+[
+  {
+    "case_id": "case-01",
+    "case_note": "Routine follow-up call completed. Client doing well, no concerns raised.",
+    "gold_tier": "Low"
+  },
+  {
+    "case_id": "case-02",
+    "case_note": "Client missed last two scheduled check-ins. Neighbor reports client has not been seen in 5 days.",
+    "gold_tier": "High"
+  },
+  {
+    "case_id": "case-03",
+    "case_note": "Client described feeling hopeless and mentioned a specific plan to harm themselves during the session.",
+    "gold_tier": "Critical"
+  },
+  {
+    "case_id": "case-04",
+    "case_note": "New intake. Client requesting general information about available services, no immediate concerns.",
+    "gold_tier": "Low"
+  },
+  {
+    "case_id": "case-05",
+    "case_note": "Field worker observed signs of unsafe housing conditions during a home visit; client did not raise immediate safety concerns.",
+    "gold_tier": "Medium"
+  },
+  {
+    "case_id": "case-06",
+    "case_note": "Client reported their partner has access to a weapon and recent threats were made.",
+    "gold_tier": "Critical"
+  },
+  {
+    "case_id": "case-07",
+    "case_note": "Case file note: documentation update only, no client contact this period.",
+    "gold_tier": "Low"
+  },
+  {
+    "case_id": "case-08",
+    "case_note": "Client appeared distressed during call, reported family conflict and asked for a follow-up next week.",
+    "gold_tier": "Medium"
+  },
+  {
+    "case_id": "case-09",
+    "case_note": "Anonymous report received that a minor at the address may be unsupervised for extended periods; unconfirmed.",
+    "gold_tier": "High"
+  },
+  {
+    "case_id": "case-10",
+    "case_note": "Client confirmed safe arrival at new housing placement; case ready to close.",
+    "gold_tier": "Low"
+  }
+]

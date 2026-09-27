@@ -1,0 +1,62 @@
+orca-ai-layer/
+│
+├── README.md
+├── pyproject.toml
+├── requirements.txt
+├── .gitignore
+│
+├── config/
+│   └── config.yaml
+│
+├── src/
+│   └── orca/
+│       ├── __init__.py
+│       ├── config.py
+│       │
+│       ├── llm/
+│       │   ├── __init__.py
+│       │   ├── client.py
+│       │   └── fake_llm.py
+│       │
+│       ├── triage/
+│       │   ├── __init__.py
+│       │   ├── assistant.py
+│       │   ├── schemas.py
+│       │   ├── validator.py
+│       │   └── guardrails.py
+│       │
+│       ├── evaluation/
+│       │   ├── __init__.py
+│       │   ├── evaluator.py
+│       │   └── metrics.py
+│       │
+│       └── audit/
+│           ├── __init__.py
+│           └── logger.py
+│
+├── data/
+│   └── cases.json
+│
+├── prompts/
+│   ├── prompt_v1.txt
+│   └── prompt_v2.txt
+│
+├── eval/
+│   └── run_eval.py
+│
+├── scripts/
+│   └── triage_case.py
+│
+├── tests/
+│   ├── conftest.py
+│   ├── test_llm_client.py
+│   ├── test_fallback.py
+│   ├── test_validation.py
+│   ├── test_guardrails.py
+│   └── test_triage.py
+│
+├── output/
+│   └── .gitkeep
+│
+└── docs/
+    └── design_decisions.md
