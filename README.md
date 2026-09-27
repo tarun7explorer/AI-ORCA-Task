@@ -1,19 +1,39 @@
 # ORCA AI Layer
 
-Triage assistant, guardrails, and eval harness for SRN's ORCA case-management platform.
+Triage assistant, guardrails, evaluation harness, and web console for SRN's ORCA
+case-management platform.
 
 ## Setup
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+export PYTHONPATH=src
 ```
 
-No environment variables or API keys are required — Part 1's `LLMClient` wraps two
-`FakeLLMProvider` instances (Appendix B) so everything runs offline and deterministically.
+## Quickstart
 
-## Run a single case
+### Interactive web console
+
+Launch the FastAPI-based triage console locally:
+
+```bash
+uvicorn app:app --reload
+```
+
+Then open [http://localhost:8000](http://localhost:8000) in a browser. The console lets
+you pick a prompt version (v1 / v2), load one of four quick-scenario presets, submit a
+case note, and inspect the resulting urgency tier, human-review status, audit metadata
+(provider used, attempts, schema retries, call cost), and raw JSON payload — all served
+by the same `TriageCaseAssistant` pipeline used by the CLI and eval harness below.
+
+The API endpoint backing the console is `POST /api/triage`, which accepts:
+
+```json
+{ "note": "Case note text...", "prompt_version": "v1" }
+```
+
+### Run a single case (CLI)
 
 ```bash
 python scripts/triage_case.py --case-id CASE-123 \
@@ -21,55 +41,44 @@ python scripts/triage_case.py --case-id CASE-123 \
   --prompt-version v1
 ```
 
-This prints the triaged record (tier, human-review flag, confidence, flags, next steps),
-the audit metadata for that call (provider used, attempts, retries, guardrail interventions,
-cost), and appends a JSON line to `output/audit_log.jsonl`.
-
-## Run the eval harness (v1 vs v2 regression check)
+### Run the eval harness (v1 vs v2 regression check)
 
 ```bash
 python eval/run_eval.py
 ```
 
-Runs the full triage pipeline over the 10 labeled cases in `data/cases.json`, once per
-prompt version, and reports:
-
-- Tier agreement (predicted vs. gold `urgency_tier`)
-- **Critical false-negative rate** — gold is Critical but the prediction is lower;
-  the failure mode that matters most, since plain accuracy hides it
-- Average token cost per case
-- How often the fallback provider was invoked, and what that did to total run cost
-- A v1 → v2 delta table, with a regression warning if v2 increases the Critical
-  false-negative rate relative to v1
-
-Per-run audit trails are written to `output/audit_log_v1.jsonl` and `output/audit_log_v2.jsonl`.
+Reports tier agreement, Critical false-negative rate, avg token cost/case, and fallback-usage
+rate for both prompt versions, plus a v1→v2 delta table.
 
 ## Provider configuration
 
-Configured in `config/config.yaml` (loaded via `AppConfig.default()`), matching Part 4's
-exact rate table:
+Configured in `config/config.yaml` (or `AppConfig.default()` in code) per Part 4's rate table:
 
 | Provider | failure_rate | malformed_rate | $/1M in | $/1M out |
 |---|---|---|---|---|
 | orca-primary | 0.15 | 0.05 | 3.00 | 15.00 |
 | orca-fallback | 0.02 | 0.25 | 0.50 | 1.50 |
 
-`max_retries` (per-provider retry budget, exponential backoff), `backoff_base_seconds`, and
-`max_schema_retries` (corrective re-prompt budget on invalid model output) are also set there.
+## Deployment
+
+The repo includes a Render Blueprint (`render.yaml`) for one-click deployment of the web
+console on Render's free tier:
+
+1. Push this repository to GitHub (or GitLab).
+2. In Render, choose **New → Blueprint** and point it at the repo. Render reads
+   `render.yaml` automatically and provisions a `web` service named `orca-ai-triage`
+   with:
+   - `buildCommand: pip install -r requirements.txt`
+   - `startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT`
+   - `PYTHONPATH=src` set so the `orca` package under `src/` resolves correctly.
+3. Once deployed, the console is reachable at the Render-issued URL, and `/healthz`
+   can be used as an uptime/health check.
+
+No environment variables or secrets are required — the app runs entirely against the
+deterministic `FakeLLMProvider` from Appendix B, so there's no API key to configure.
 
 ## Tests
 
 ```bash
 pytest
 ```
-
-Covers: the retry/backoff/fallback cascade and cost/usage attribution (`test_llm_client.py`,
-`test_fallback.py`), schema validation and the corrective-reprompt-then-fail-safe path
-(`test_validation.py`), the non-negotiable Critical override and disallowed-language guardrail
-(`test_guardrails.py`), and full end-to-end pipeline + audit-trail behavior (`test_triage.py`).
-
-## Design decisions
-
-See [`docs/design_decisions.md`](docs/design_decisions.md) for the Part 5 write-up: guardrail
-enforcement strategy, fallback-provider trust, the asymmetric-risk eval metric, the v1/v2
-regression gate call, and the cost-vs-safety retry cutoff.

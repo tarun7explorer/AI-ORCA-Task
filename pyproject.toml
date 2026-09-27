@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "orca-ai-layer"
 version = "0.1.0"
-description = "ORCA AI triage layer: LLM integration, guardrails, and evaluation harness"
+description = "ORCA AI triage layer: LLM integration, guardrails, evaluation harness, and web console"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Proprietary" }
@@ -16,6 +16,8 @@ dependencies = [
     "pydantic>=2.4.0,<3.0.0",
     "PyYAML>=6.0.1,<7.0.0",
     "rich>=13.7.0,<14.0.0",
+    "fastapi>=0.111.0,<1.0.0",
+    "uvicorn[standard]>=0.29.0,<1.0.0",
 ]
 
 [project.optional-dependencies]

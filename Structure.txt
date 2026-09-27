@@ -1,62 +1,67 @@
 orca-ai-layer/
 │
-├── README.md
-├── pyproject.toml
-├── requirements.txt
-├── .gitignore
+├── README.md                          # Quickstart, local CLI guides, and live demo link
+├── pyproject.toml                     # Single source of truth: packaging, build, pytest, and ruff configs
+├── requirements.txt                   # Frozen lockfile (includes pydantic, pyyaml, rich, pytest, fastapi, uvicorn)
+├── render.yaml                        # Render Blueprint specification for free web service deployment
+├── .gitignore                         # Ignores .venv/, .pytest_cache/, __pycache__/, and runtime output/*
+│
+├── app.py                             # FastAPI server (GET / serves web console, POST /api/triage handles runs)
+├── templates/
+│   └── index.html                     # Split-pane caseworker console (Tailwind CDN, presets, live metrics)
 │
 ├── config/
-│   └── config.yaml
+│   └── config.yaml                    # Provider rates, failure/malformed probabilities, and retry thresholds
 │
 ├── src/
 │   └── orca/
 │       ├── __init__.py
-│       ├── config.py
+│       ├── config.py                  # PyYAML loader mapping into validated Pydantic models
 │       │
 │       ├── llm/
 │       │   ├── __init__.py
-│       │   ├── client.py
-│       │   └── fake_llm.py
+│       │   ├── client.py              # Retry/backoff loop, fallback provider routing, token accounting
+│       │   └── fake_llm.py            # Appendix B starter code (unmodified)
 │       │
 │       ├── triage/
 │       │   ├── __init__.py
-│       │   ├── assistant.py
-│       │   ├── schemas.py
-│       │   ├── validator.py
-│       │   └── guardrails.py
+│       │   ├── assistant.py           # Core triage pipeline: prompts client, handles validation repair loop
+│       │   ├── schemas.py             # Validated triage output schema (UrgencyTier, TriageRecord)
+│       │   ├── validator.py           # JSON parser, schema validation, corrective re-prompt builder
+│       │   └── guardrails.py          # Critical tier review override and disallowed terms enforcement
 │       │
 │       ├── evaluation/
 │       │   ├── __init__.py
-│       │   ├── evaluator.py
-│       │   └── metrics.py
+│       │   ├── evaluator.py           # Evaluates prompt versions across the 10 gold-standard cases
+│       │   └── metrics.py             # Computes agreement, Critical false-negative rate, and token costs
 │       │
 │       └── audit/
 │           ├── __init__.py
-│           └── logger.py
+│           └── logger.py              # Structured JSONL logger recording input, outputs, flags, timestamps
 │
 ├── data/
-│   └── cases.json
+│   └── cases.json                     # Appendix A's 10 gold-labeled test cases
 │
 ├── prompts/
-│   ├── prompt_v1.txt
-│   └── prompt_v2.txt
+│   ├── prompt_v1.txt                  # Baseline prompt template
+│   └── prompt_v2.txt                  # Deliberately varied prompt template for regression testing
 │
 ├── eval/
-│   └── run_eval.py
+│   └── run_eval.py                    # Single-command CLI evaluation harness (evaluates v1, v2, prints diffs)
 │
 ├── scripts/
-│   └── triage_case.py
+│   └── triage_case.py                 # Reviewer CLI: processes arbitrary note strings with Rich terminal output
 │
 ├── tests/
-│   ├── conftest.py
-│   ├── test_llm_client.py
-│   ├── test_fallback.py
-│   ├── test_validation.py
-│   ├── test_guardrails.py
-│   └── test_triage.py
+│   ├── conftest.py                    # Shared fixtures: test cases, deterministic seeded providers
+│   ├── test_llm_client.py             # Unit tests for retries, backoff, and cumulative token tracking
+│   ├── test_fallback.py               # Unit tests for fallback failover on primary exhaustion
+│   ├── test_validation.py             # Unit tests for schema re-prompting on malformed outputs
+│   ├── test_guardrails.py             # Unit tests for Critical review override and disallowed clinical terms
+│   └── test_triage.py                 # End-to-end integration test from raw note to audited result
 │
 ├── output/
-│   └── .gitkeep
+│   └── .gitkeep                       # Destination directory for runtime audit logs and eval artifacts
 │
 └── docs/
-    └── design_decisions.md
+    └── design_decisions.md            # Part 5: Grounded answers to all 5 trade-off questions

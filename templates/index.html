@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ORCA Intake — Solace Relief Network</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Inter', 'sans-serif'] },
+      }
+    }
+  };
+</script>
+<style>
+  html, body { background-color: #020617; }
+  * { scrollbar-width: thin; scrollbar-color: #334155 transparent; }
+  ::-webkit-scrollbar { width: 7px; height: 7px; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 999px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  textarea { field-sizing: content; }
+
+  @keyframes pulseRing {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.45); }
+    50% { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+  }
+  .critical-pulse { animation: pulseRing 1.8s ease-in-out infinite; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .fade-up { animation: fadeUp 0.35s ease-out; }
+
+  .spinner {
+    border: 2px solid rgba(255,255,255,0.25);
+    border-top-color: white;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased">
+
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+
+    <!-- Header -->
+    <header class="flex items-center gap-3 mb-8">
+      <div class="h-11 w-11 shrink-0 rounded-2xl bg-gradient-to-br from-red-500/20 to-red-600/10 border border-red-500/30 flex items-center justify-center">
+        <span class="text-red-400 font-bold text-lg">O</span>
+      </div>
+      <div>
+        <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-50">Solace Relief Network — ORCA Intake</h1>
+        <p class="text-sm text-slate-500">AI-assisted case triage, with human review guardrails built in.</p>
+      </div>
+    </header>
+
+    <main class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+
+      <!-- ================= LEFT: INPUT CONSOLE ================= -->
+      <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-6">
+
+        <!-- Prompt version segmented pill -->
+        <div>
+          <label class="block text-xs font-medium uppercase tracking-wide text-slate-500 mb-2">Prompt strategy</label>
+          <div id="versionSwitch" class="grid grid-cols-2 gap-1 p-1 bg-slate-950 border border-slate-800 rounded-xl">
+            <button type="button" data-version="v1" class="version-btn relative rounded-lg py-2 text-sm font-medium transition-all duration-200">
+              v1 · Default
+            </button>
+            <button type="button" data-version="v2" class="version-btn relative rounded-lg py-2 text-sm font-medium transition-all duration-200">
+              v2 · Safety Escalated
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick presets -->
+        <div>
+          <label class="block text-xs font-medium uppercase tracking-wide text-slate-500 mb-2">Quick scenarios</label>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" class="preset-pill" data-preset="critical_weapon"
+              data-note="Client reported their partner has access to a weapon and recent threats were made.">
+              🚨 Weapon Threat (Critical)
+            </button>
+            <button type="button" class="preset-pill" data-preset="high_unsafe"
+              data-note="Anonymous report received that a minor at the address may be unsupervised for extended periods; unconfirmed.">
+              ⚠️ Unsafe Housing (High)
+            </button>
+            <button type="button" class="preset-pill" data-preset="low_routine"
+              data-note="Routine follow-up call completed. Client doing well, no concerns raised.">
+              📋 Routine Follow-up (Low)
+            </button>
+            <button type="button" class="preset-pill" data-preset="clinical_language"
+              data-note="Client appeared distressed during call, reported family conflict and asked for a follow-up next week.">
+              💊 Clinical Language Guardrail
+            </button>
+          </div>
+        </div>
+
+        <!-- Case note -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-medium uppercase tracking-wide text-slate-500">Case note</label>
+            <span id="charCount" class="text-xs text-slate-600 tabular-nums">0 / 4000</span>
+          </div>
+          <textarea id="caseNote" rows="6" maxlength="4000"
+            class="w-full resize-none rounded-xl bg-slate-950 border border-slate-800 focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/20 focus:outline-none px-4 py-3 text-sm leading-relaxed text-slate-100 placeholder:text-slate-600 transition-all duration-200"
+            placeholder="Describe the case — e.g. what a field worker or intake call observed..."></textarea>
+        </div>
+
+        <!-- Submit -->
+        <button id="submitBtn" type="button"
+          class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-3 transition-all duration-200 shadow-lg shadow-cyan-950/50">
+          <span id="spinner" class="spinner hidden"></span>
+          <span id="submitLabel">Run AI Triage</span>
+        </button>
+
+        <p id="errorBox" class="hidden text-xs text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2"></p>
+      </section>
+
+      <!-- ================= RIGHT: RESULT CARD ================= -->
+      <section>
+
+        <!-- Empty state -->
+        <div id="emptyState" class="bg-slate-900/40 border border-dashed border-slate-800 rounded-2xl p-12 text-center">
+          <div class="mx-auto mb-3 h-10 w-10 rounded-full bg-slate-800/60 flex items-center justify-center text-slate-500">
+            ⌁
+          </div>
+          <p class="text-sm text-slate-500">Select a preset or enter case notes to run real-time triage.</p>
+        </div>
+
+        <!-- Result state -->
+        <div id="resultPanel" class="hidden space-y-4 fade-up">
+
+          <!-- Hero banner -->
+          <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 sm:p-6">
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-xs font-medium uppercase tracking-wide text-slate-500">Assessment</span>
+              <span id="caseIdLabel" class="text-[11px] font-mono text-slate-600"></span>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3 mb-1">
+              <span id="urgencyBadge" class="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-bold tracking-wide"></span>
+              <span id="confidenceLabel" class="text-sm text-slate-500"></span>
+            </div>
+
+            <div id="reviewTag" class="hidden mt-3 inline-flex items-center gap-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs font-bold tracking-wide text-red-300">
+              <span>⚠</span>
+              <span>MANDATORY HUMAN REVIEW</span>
+            </div>
+
+            <!-- Recommended actions -->
+            <div class="mt-6">
+              <h3 class="text-xs font-medium uppercase tracking-wide text-slate-500 mb-2">Recommended actions</h3>
+              <ul id="stepsList" class="space-y-2"></ul>
+            </div>
+
+            <!-- Flags -->
+            <div class="mt-6">
+              <h3 class="text-xs font-medium uppercase tracking-wide text-slate-500 mb-2">Active flags</h3>
+              <div id="flagsList" class="flex flex-wrap gap-1.5"></div>
+            </div>
+          </div>
+
+          <!-- Audit strip -->
+          <div class="bg-slate-900/60 border border-slate-800 rounded-2xl grid grid-cols-2 sm:grid-cols-4 divide-x divide-slate-800 overflow-hidden">
+            <div class="p-3 sm:p-4">
+              <div class="text-[10px] uppercase tracking-wide text-slate-600">Provider</div>
+              <div id="metaProvider" class="text-sm font-semibold mt-1 text-slate-200 truncate">—</div>
+            </div>
+            <div class="p-3 sm:p-4">
+              <div class="text-[10px] uppercase tracking-wide text-slate-600">Attempts</div>
+              <div id="metaAttempts" class="text-sm font-semibold mt-1 text-slate-200">—</div>
+            </div>
+            <div class="p-3 sm:p-4">
+              <div class="text-[10px] uppercase tracking-wide text-slate-600">Schema Retried</div>
+              <div id="metaRetried" class="text-sm font-semibold mt-1 text-slate-200">—</div>
+            </div>
+            <div class="p-3 sm:p-4">
+              <div class="text-[10px] uppercase tracking-wide text-slate-600">Call Cost</div>
+              <div id="metaCost" class="text-sm font-semibold mt-1 text-slate-200">—</div>
+            </div>
+          </div>
+
+          <!-- JSON accordion -->
+          <div class="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden">
+            <button id="jsonToggle" type="button" class="w-full flex items-center justify-between px-5 py-3.5 text-sm text-slate-300 hover:bg-slate-800/40 transition-all duration-200">
+              <span class="font-medium">Inspect JSON payload</span>
+              <span id="jsonChevron" class="text-slate-500 transition-transform duration-200">▸</span>
+            </button>
+            <pre id="jsonOutput" class="hidden text-xs text-slate-300 bg-slate-950 px-5 py-4 overflow-x-auto border-t border-slate-800">{}</pre>
+          </div>
+
+        </div>
+      </section>
+    </main>
+
+    <footer class="mt-10 text-center text-xs text-slate-700">
+      Demo console — powered by a deterministic fake LLM. No real model calls are made.
+    </footer>
+  </div>
+
+<script>
+  // ---------------------------------------------------------------------
+  // State
+  // ---------------------------------------------------------------------
+  let promptVersion = 'v1';
+  let selectedPreset = null;
+
+  // ---------------------------------------------------------------------
+  // Element refs
+  // ---------------------------------------------------------------------
+  const caseNote = document.getElementById('caseNote');
+  const charCount = document.getElementById('charCount');
+  const submitBtn = document.getElementById('submitBtn');
+  const submitLabel = document.getElementById('submitLabel');
+  const spinner = document.getElementById('spinner');
+  const errorBox = document.getElementById('errorBox');
+  const emptyState = document.getElementById('emptyState');
+  const resultPanel = document.getElementById('resultPanel');
+  const reviewTag = document.getElementById('reviewTag');
+  const urgencyBadge = document.getElementById('urgencyBadge');
+  const confidenceLabel = document.getElementById('confidenceLabel');
+  const caseIdLabel = document.getElementById('caseIdLabel');
+  const stepsList = document.getElementById('stepsList');
+  const flagsList = document.getElementById('flagsList');
+  const metaProvider = document.getElementById('metaProvider');
+  const metaAttempts = document.getElementById('metaAttempts');
+  const metaRetried = document.getElementById('metaRetried');
+  const metaCost = document.getElementById('metaCost');
+  const jsonToggle = document.getElementById('jsonToggle');
+  const jsonOutput = document.getElementById('jsonOutput');
+  const jsonChevron = document.getElementById('jsonChevron');
+
+  // ---------------------------------------------------------------------
+  // Prompt version pill switch
+  // ---------------------------------------------------------------------
+  function paintVersionButtons() {
+    document.querySelectorAll('.version-btn').forEach((btn) => {
+      const active = btn.dataset.version === promptVersion;
+      btn.className = 'version-btn relative rounded-lg py-2 text-sm font-medium transition-all duration-200 ' +
+        (active
+          ? 'bg-cyan-600 text-white shadow-sm'
+          : 'text-slate-400 hover:text-slate-200');
+    });
+  }
+  document.querySelectorAll('.version-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      promptVersion = btn.dataset.version;
+      paintVersionButtons();
+    });
+  });
+  paintVersionButtons();
+
+  // ---------------------------------------------------------------------
+  // Preset pills (hardcoded client-side — no server templating involved)
+  // ---------------------------------------------------------------------
+  function paintPresetStyles() {
+    document.querySelectorAll('.preset-pill').forEach((btn) => {
+      const active = btn.dataset.preset === selectedPreset;
+      btn.className = 'preset-pill inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-medium border transition-all duration-200 ' +
+        (active
+          ? 'border-cyan-500/60 bg-cyan-500/10 text-cyan-300'
+          : 'border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700 hover:text-slate-200');
+    });
+  }
+  document.querySelectorAll('.preset-pill').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      caseNote.value = btn.dataset.note;
+      selectedPreset = btn.dataset.preset;
+      updateCharCount();
+      paintPresetStyles();
+    });
+  });
+  paintPresetStyles();
+
+  // ---------------------------------------------------------------------
+  // Textarea char count
+  // ---------------------------------------------------------------------
+  function updateCharCount() {
+    charCount.textContent = `${caseNote.value.length} / 4000`;
+  }
+  caseNote.addEventListener('input', () => {
+    updateCharCount();
+    selectedPreset = null;
+    paintPresetStyles();
+  });
+  updateCharCount();
+
+  // ---------------------------------------------------------------------
+  // JSON accordion
+  // ---------------------------------------------------------------------
+  jsonToggle.addEventListener('click', () => {
+    const hidden = jsonOutput.classList.toggle('hidden');
+    jsonChevron.style.transform = hidden ? 'rotate(0deg)' : 'rotate(90deg)';
+  });
+
+  // ---------------------------------------------------------------------
+  // Tier styling
+  // ---------------------------------------------------------------------
+  const TIER_STYLES = {
+    Low:      'bg-emerald-500/15 text-emerald-300 ring-1 ring-inset ring-emerald-500/30',
+    Medium:   'bg-amber-500/15 text-amber-300 ring-1 ring-inset ring-amber-500/30',
+    High:     'bg-orange-500/15 text-orange-300 ring-1 ring-inset ring-orange-500/30',
+    Critical: 'bg-red-500/15 text-red-300 ring-1 ring-inset ring-red-500/40 critical-pulse',
+  };
+
+  function renderResult(data) {
+    emptyState.classList.add('hidden');
+    resultPanel.classList.remove('hidden');
+    resultPanel.classList.add('fade-up');
+
+    caseIdLabel.textContent = `${data.case_id} · prompt ${data.prompt_version}`;
+
+    urgencyBadge.className = 'inline-flex items-center px-4 py-1.5 rounded-full text-sm font-bold tracking-wide ' +
+      (TIER_STYLES[data.urgency_tier] || 'bg-slate-700 text-slate-200');
+    urgencyBadge.textContent = (data.urgency_tier || 'UNKNOWN').toUpperCase();
+
+    confidenceLabel.textContent = typeof data.confidence === 'number'
+      ? `${(data.confidence * 100).toFixed(0)}% confidence`
+      : '';
+
+    if (data.requires_human_review) {
+      reviewTag.classList.remove('hidden');
+    } else {
+      reviewTag.classList.add('hidden');
+    }
+
+    stepsList.innerHTML = '';
+    (data.recommended_next_steps || []).forEach((s) => {
+      const li = document.createElement('li');
+      li.className = 'flex items-start gap-2.5 text-sm text-slate-200';
+      li.innerHTML = `
+        <span class="mt-0.5 h-4 w-4 shrink-0 rounded-full border border-slate-700 flex items-center justify-center text-[10px] text-slate-500">✓</span>
+        <span>${escapeHtml(s)}</span>
+      `;
+      stepsList.appendChild(li);
+    });
+
+    flagsList.innerHTML = '';
+    const flags = data.flags || [];
+    if (flags.length === 0) {
+      const span = document.createElement('span');
+      span.className = 'text-xs text-slate-600';
+      span.textContent = 'No flags raised';
+      flagsList.appendChild(span);
+    } else {
+      flags.forEach((f) => {
+        const span = document.createElement('span');
+        span.className = 'text-[11px] font-medium px-2.5 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-slate-300';
+        span.textContent = f;
+        flagsList.appendChild(span);
+      });
+    }
+
+    metaProvider.textContent = data.provider_used || 'none (fail-safe)';
+    metaAttempts.textContent = data.attempts != null ? data.attempts : '—';
+    metaRetried.textContent = data.schema_retried ? 'True' : 'False';
+    metaRetried.className = 'text-sm font-semibold mt-1 ' + (data.schema_retried ? 'text-amber-400' : 'text-slate-200');
+    metaCost.textContent = data.cost_usd != null ? `$${Number(data.cost_usd).toFixed(6)}` : '—';
+
+    jsonOutput.textContent = JSON.stringify(data.validated_output ?? data, null, 2);
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ---------------------------------------------------------------------
+  // Submit
+  // ---------------------------------------------------------------------
+  async function runTriage() {
+    const note = caseNote.value.trim();
+    if (!note) {
+      errorBox.textContent = 'Enter a case note first.';
+      errorBox.classList.remove('hidden');
+      return;
+    }
+    errorBox.classList.add('hidden');
+    submitBtn.disabled = true;
+    spinner.classList.remove('hidden');
+    submitLabel.textContent = 'Running…';
+
+    try {
+      const res = await fetch('/api/triage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          note,
+          prompt_version: promptVersion,
+          preset: selectedPreset,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `Request failed (${res.status})`);
+      }
+      const data = await res.json();
+      renderResult(data);
+    } catch (e) {
+      errorBox.textContent = e.message || 'Something went wrong.';
+      errorBox.classList.remove('hidden');
+    } finally {
+      submitBtn.disabled = false;
+      spinner.classList.add('hidden');
+      submitLabel.textContent = 'Run AI Triage';
+    }
+  }
+
+  submitBtn.addEventListener('click', runTriage);
+</script>
+</body>
+</html>
